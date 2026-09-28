@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match the Activities with the People</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        h1, h2, .font-heading {
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* Custom Drag & Drop styling */
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: manipulation;
+            transition: all 0.2s ease;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        .draggable-item.selected {
+            ring: 3px;
+            transform: scale(1.05);
+            border-color: #0284c7;
+            background-color: #e0f2fe;
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+            min-height: 48px;
+        }
+
+        .drop-zone.drag-over {
+            background-color: #e0f2fe;
+            border-color: #0284c7;
+            border-style: solid;
+        }
+
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800 flex flex-col justify-between p-3 sm:p-6">
+
+    <header class="max-w-4xl mx-auto w-full mb-4">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full uppercase tracking-wider mb-2">
+                    Actividad de Inglés
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
+                    Match the activities with the people
+                </h1>
+                <p class="text-slate-600 text-sm mt-1">
+                    <i class="fa-solid fa-hand-pointer text-sky-500 mr-1"></i>
+                    <strong>Instrucción:</strong> Arrastra cada actividad de la caja superior hacia la oración correspondiente, o haz clic sobre una respuesta y luego sobre la casilla.
+                </p>
+            </div>
+            
+            <div id="score-badge" class="hidden sm:flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl p-3 min-w-[100px] shadow-md">
+                <span class="text-xs font-medium uppercase tracking-wider">Puntaje</span>
+                <span id="score-text" class="text-2xl font-black">0 / 8</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-4xl mx-auto w-full flex-grow flex flex-col gap-6">
+
+        <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200 bg-amber-50/50">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-amber-800 uppercase tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-box-open text-amber-600"></i> Banco de Opciones
+                </h2>
+                <span class="text-xs text-amber-700 font-medium hidden sm:inline">Arrastra o toca para seleccionar</span>
+            </div>
+            <div id="options-bank" class="flex flex-wrap gap-2 sm:gap-3 min-h-[60px] p-2 rounded-xl bg-amber-100/40 border border-amber-200/80 items-center">
+                <!-- Options will be injected by JavaScript -->
+            </div>
+        </section>
+
+        <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
+            <div id="questions-list" class="space-y-4">
+                <!-- Sentences will be injected by JavaScript -->
+            </div>
+        </section>
+
+        <div id="result-banner" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 text-center text-emerald-900 animate-bounce">
+            <i class="fa-solid fa-trophy text-3xl text-emerald-500 mb-1"></i>
+            <h3 class="text-xl font-bold" id="result-title">¡Buen Trabajo!</h3>
+            <p class="text-sm" id="result-detail">Obtuviste 8 de 8 respuestas correctas.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-4 py-2 mb-4">
+            <button id="btn-check" onclick="checkAnswers()" class="flex-1 sm:flex-initial px-8 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-xl shadow-lg shadow-sky-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-lg">
+                <i class="fa-solid fa-circle-check"></i> Chequear
+            </button>
+            <button id="btn-reset" onclick="resetActivity()" class="px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-left"></i> Reiniciar
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="text-center text-xs text-slate-400 py-3">
+        Actividad Interactiva de Inglés &bull; HTML + JS Drag and Drop
+    </footer>
+
+    <script>
+        // Data structure containing the questions and answers
+        const activityData = [
+            {
+                id: 1,
+                text: "Erica likes hot weather and swimming. She has two new books to read.",
+                correct: "go to the beach"
+            },
+            {
+                id: 2,
+                text: "It's a beautiful sunny day. Paul is hungry, and he has some meat and fish.",
+                correct: "have a barbecue"
+            },
+            {
+                id: 3,
+                text: "It's Lucia's birthday tomorrow, and she wants to celebrate with her friends.",
+                correct: "have a party"
+            },
+            {
+                id: 4,
+                text: "The weather's not good, and Samuel has an exam next week.",
+                correct: "stay home"
+            },
+            {
+                id: 5,
+                text: "Marek and Kasia are in Charleston for the weekend. They're interested in history.",
+                correct: "visit a museum"
+            },
+            {
+                id: 6,
+                text: "Sonia loves nature. She wants to go on vacation, but she doesn't want to spend a lot of money.",
+                correct: "stay in a tent"
+            },
+            {
+                id: 7,
+                text: "Cristian is going to San Francisco. His family lives there.",
+                correct: "visit family"
+            },
+            {
+                id: 8,
+                text: "Natalia is at home tonight. She bought a new 40-inch TV last week.",
+                correct: "watch a movie"
+            }
+        ];
+
+        // All options list
+        const allOptions = [
+            "visit family",
+            "go to the beach",
+            "have a barbecue",
+            "watch a movie",
+            "have a party",
+            "stay home",
+            "visit a museum",
+            "stay in a tent"
+        ];
+
+        let selectedOptionElement = null;
+        let audioCtx = null;
+
+        // Initialize Web Audio API on user interaction
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    // Short soft click sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'drop') {
+                    // Satisfying drop sound
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'success') {
+                    // Fanfare / Success sound
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, i) => {
+                        const noteOsc = ctx.createOscillator();
+                        const noteGain = ctx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(ctx.destination);
+                        
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + i * 0.08);
+                        noteGain.gain.setValueAtTime(0.2, now + i * 0.08);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+                        
+                        noteOsc.start(now + i * 0.08);
+                        noteOsc.stop(now + i * 0.08 + 0.25);
+                    });
+                } else if (type === 'check') {
+                    // Check sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'reset') {
+                    // Reset sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }
+            } catch (e) {
+                console.log("Audio API Error: ", e);
+            }
+        }
+
+        function initApp() {
+            renderOptionsBank();
+            renderQuestions();
+        }
+
+        // Render Draggable Options
+        function renderOptionsBank() {
+            const bank = document.getElementById('options-bank');
+            bank.innerHTML = '';
+            
+            // Shuffle options for variety
+            const shuffled = [...allOptions].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach((opt, idx) => {
+                const el = createOptionElement(opt, `opt-${idx}`);
+                bank.appendChild(el);
+            });
+        }
+
+        // Helper to create an option item element
+        function createOptionElement(text, id) {
+            const div = document.createElement('div');
+            div.className = 'draggable-item px-3.5 py-2 bg-white text-orange-600 font-semibold text-sm rounded-xl border-2 border-orange-300 shadow-sm hover:border-orange-400 hover:shadow flex items-center gap-2 cursor-grab';
+            div.setAttribute('draggable', 'true');
+            div.dataset.value = text;
+            div.id = id || `opt-${Math.random().toString(36).substr(2, 9)}`;
+            
+            div.innerHTML = `<i class="fa-solid fa-grip-vertical text-orange-300 text-xs"></i><span>${text}</span>`;
+
+            // Desktop Drag Events
+            div.addEventListener('dragstart', handleDragStart);
+            div.addEventListener('dragend', handleDragEnd);
+
+            // Click / Tap Handler for Mobile/Accessibility
+            div.addEventListener('click', (e) => handleOptionClick(e, div));
+
+            return div;
+        }
+
+        // Render Questions
+        function renderQuestions() {
+            const list = document.getElementById('questions-list');
+            list.innerHTML = '';
+
+            activityData.forEach((q, index) => {
+                const row = document.createElement('div');
+                row.className = 'sentence-row p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition flex flex-col md:flex-row md:items-center justify-between gap-3';
+                row.dataset.id = q.id;
+
+                row.innerHTML = `
+                    <div class="flex items-start gap-3 flex-grow">
+                        <span class="w-7 h-7 flex-shrink-0 bg-slate-200 text-slate-700 font-bold rounded-lg flex items-center justify-center text-sm">
+                            ${index + 1}
+                        </span>
+                        <p class="text-slate-700 text-sm sm:text-base pt-0.5 leading-relaxed">
+                            ${q.text}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 md:w-72 flex-shrink-0">
+                        <div class="drop-zone flex-grow bg-white border-2 border-dashed border-slate-300 rounded-xl p-1 flex items-center justify-center text-center text-xs text-slate-400 min-h-[46px] relative"
+                             data-question-id="${q.id}"
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)"
+                             ondrop="handleDrop(event)"
+                             onclick="handleZoneClick(this)">
+                             <span class="placeholder-text select-none text-slate-300">Soltar aquí / Tocar</span>
+                        </div>
+                        <div class="feedback-icon hidden w-8 flex items-center justify-center"></div>
+                    </div>
+                `;
+
+                list.appendChild(row);
+            });
+        }
+
+        function handleDragStart(e) {
+            playSound('click');
+            e.dataTransfer.setData('text/plain', e.target.dataset.value);
+            e.dataTransfer.setData('element-id', e.target.id);
+            e.target.classList.add('dragging');
+
+            // Clear any click-selection
+            deselectAllOptions();
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const zone = e.currentTarget;
+            zone.classList.remove('drag-over');
+
+            const textValue = e.dataTransfer.getData('text/plain');
+            const elemId = e.dataTransfer.getData('element-id');
+            const draggedElem = document.getElementById(elemId);
+
+            if (textValue && draggedElem) {
+                placeOptionInZone(draggedElem, zone);
+                playSound('drop');
+            }
+        }
+
+        function handleOptionClick(e, elem) {
+            e.stopPropagation();
+            playSound('click');
+
+            if (elem.classList.contains('selected')) {
+                elem.classList.remove('selected');
+                selectedOptionElement = null;
+            } else {
+                deselectAllOptions();
+                elem.classList.add('selected');
+                selectedOptionElement = elem;
+            }
+        }
+
+        function deselectAllOptions() {
+            document.querySelectorAll('.draggable-item').forEach(el => el.classList.remove('selected'));
+            selectedOptionElement = null;
+        }
+
+        function handleZoneClick(zone) {
+            if (selectedOptionElement) {
+                placeOptionInZone(selectedOptionElement, zone);
+                playSound('drop');
+                deselectAllOptions();
+            } else {
+                // If user clicks an occupied zone without selection, return item to bank
+                const child = zone.querySelector('.draggable-item');
+                if (child) {
+                    returnToBank(child);
+                    playSound('reset');
+                }
+            }
+        }
+
+        // Move item to drop zone
+        function placeOptionInZone(item, zone) {
+            // If zone already has an item, return existing item to options bank
+            const existingChild = zone.querySelector('.draggable-item');
+            if (existingChild) {
+                returnToBank(existingChild);
+            }
+
+            // Hide placeholder text
+            const placeholder = zone.querySelector('.placeholder-text');
+            if (placeholder) placeholder.style.display = 'none';
+
+            // Append item
+            zone.appendChild(item);
+            item.classList.remove('selected');
+            
+            // Adjust styles when in zone
+            item.classList.remove('bg-white', 'text-orange-600', 'border-orange-300');
+            item.classList.add('bg-sky-50', 'text-sky-700', 'border-sky-300', 'w-full', 'justify-center');
+        }
+
+        // Return option item to top bank
+        function returnToBank(item) {
+            const bank = document.getElementById('options-bank');
+            
+            // Reset item styles
+            item.classList.remove('bg-sky-50', 'text-sky-700', 'border-sky-300', 'w-full', 'justify-center');
+            item.classList.add('bg-white', 'text-orange-600', 'border-orange-300');
+
+            bank.appendChild(item);
+
+            // Re-check all zones to show placeholders if empty
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                if (!z.querySelector('.draggable-item')) {
+                    const ph = z.querySelector('.placeholder-text');
+                    if (ph) ph.style.display = 'inline';
+                }
+            });
+        }
+
+        function checkAnswers() {
+            playSound('check');
+            let score = 0;
+            const total = activityData.length;
+
+            activityData.forEach(q => {
+                const zone = document.querySelector(`.drop-zone[data-question-id="${q.id}"]`);
+                const parentRow = zone.closest('.sentence-row');
+                const feedbackContainer = parentRow.querySelector('.feedback-icon');
+                const item = zone.querySelector('.draggable-item');
+
+                feedbackContainer.classList.remove('hidden');
+
+                if (item && item.dataset.value === q.correct) {
+                    score++;
+                    // Correct styling
+                    zone.className = 'drop-zone flex-grow bg-emerald-50 border-2 border-emerald-500 rounded-xl p-1 flex items-center justify-center text-center text-xs min-h-[46px] relative';
+                    item.className = 'draggable-item px-3.5 py-2 bg-emerald-100 text-emerald-800 font-semibold text-sm rounded-xl border border-emerald-400 w-full flex items-center justify-center gap-2';
+                    feedbackContainer.innerHTML = `<i class="fa-solid fa-circle-check text-xl text-emerald-500"></i>`;
+                } else {
+                    // Incorrect styling
+                    zone.className = 'drop-zone flex-grow bg-rose-50 border-2 border-rose-400 rounded-xl p-1 flex items-center justify-center text-center text-xs min-h-[46px] relative';
+                    if (item) {
+                        item.className = 'draggable-item px-3.5 py-2 bg-rose-100 text-rose-800 font-semibold text-sm rounded-xl border border-rose-300 w-full flex items-center justify-center gap-2';
+                    }
+                    feedbackContainer.innerHTML = `<i class="fa-solid fa-circle-xmark text-xl text-rose-500" title="Correcto: ${q.correct}"></i>`;
+                }
+            });
+
+            // Update badges and banners
+            const scoreBadge = document.getElementById('score-badge');
+            const scoreText = document.getElementById('score-text');
+            const resultBanner = document.getElementById('result-banner');
+            const resultTitle = document.getElementById('result-title');
+            const resultDetail = document.getElementById('result-detail');
+
+            scoreBadge.classList.remove('hidden');
+            scoreBadge.classList.add('flex');
+            scoreText.textContent = `${score} / ${total}`;
+
+            resultBanner.classList.remove('hidden');
+            
+            if (score === total) {
+                playSound('success');
+                resultBanner.className = "bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 text-center text-emerald-900";
+                resultTitle.textContent = "¡Perfecto! 🌟";
+                resultDetail.textContent = `Has respondido correctamente todas las preguntas (${score}/${total}).`;
+            } else if (score >= 5) {
+                resultBanner.className = "bg-amber-50 border-2 border-amber-500 rounded-2xl p-4 text-center text-amber-900";
+                resultTitle.textContent = "¡Buen intento! 👍";
+                resultDetail.textContent = `Obtuviste ${score} de ${total} respuestas correctas. Revisa las marcadas con X.`;
+            } else {
+                resultBanner.className = "bg-rose-50 border-2 border-rose-400 rounded-2xl p-4 text-center text-rose-900";
+                resultTitle.textContent = "¡Sigue practicando! 💪";
+                resultDetail.textContent = `Obtuviste ${score} de ${total}. Haz clic en "Reiniciar" para intentar de nuevo.`;
+            }
+        }
+
+        function resetActivity() {
+            playSound('reset');
+            
+            // Hide result banner
+            document.getElementById('result-banner').classList.add('hidden');
+            document.getElementById('score-badge').classList.add('hidden');
+
+            // Reset options bank and questions
+            initApp();
+        }
+
+        // Initialize app on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
